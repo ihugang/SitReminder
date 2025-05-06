@@ -56,10 +56,10 @@ struct ReminderOverlayView: View {
       ZStack {
          Color.black.opacity(0.8).edgesIgnoringSafeArea(.all)
          VStack(spacing: 20) {
-            Text("⏰ Time to stand up!")
+            Text(NSLocalizedString("TIME_TO_STAND_UP", comment: "Reminder to stand up"))
                .font(.largeTitle)
                .foregroundColor(.white)
-            Button("Got it") {
+            Button(NSLocalizedString("GOT_IT", comment: "Acknowledge reminder")) {
                print("Got it clicked")
                print("ReminderOverlayView: Button Clicked, calling dismiss via instance.")
                appDelegateInstance.dismissAllReminderWindows()

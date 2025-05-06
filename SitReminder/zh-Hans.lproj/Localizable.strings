@@ -1,0 +1,37 @@
+/* 
+  Localizable.strings
+  SitReminder
+  
+  Created for Simplified Chinese localization
+*/
+
+// Menu Items
+"PAUSED_UNTIL" = "已暂停提醒，将在 %@ 恢复";
+"CANCEL_PAUSE" = "取消暂停";
+"NEXT_REMINDER" = "下一次提醒: %@";
+"SETTINGS" = "设置...";
+"REMIND_NOW" = "立即提醒";
+"RESET_TIMER" = "重置计时器";
+"PAUSE_MENU" = "暂停";
+"PAUSE_1_HOUR" = "暂停 1 小时";
+"PAUSE_2_HOURS" = "暂停 2 小时";
+"PAUSE_UNTIL_TOMORROW" = "暂停到明天";
+"ABOUT" = "关于";
+"QUIT" = "退出";
+
+// Settings View
+"REMINDER_INTERVAL" = "提醒间隔";
+"MINUTES" = "%d 分钟";
+"THEME" = "主题";
+"LIGHT" = "浅色";
+"DARK" = "深色";
+"AUTO" = "自动";
+"SHOW_COUNTDOWN" = "在菜单栏显示倒计时";
+
+// Reminder View
+"TIME_TO_STAND_UP" = "⏰ 该起身活动了！";
+"GOT_IT" = "知道了";
+
+// About Window
+"ABOUT_TITLE" = "SitReminder v1.0";
+"ABOUT_TEXT" = "一个帮助程序员保持健康的工具。\n(c) 2025";

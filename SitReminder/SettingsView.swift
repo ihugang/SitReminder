@@ -18,28 +18,28 @@ struct SettingsView: View {
       Form {
          VStack(alignment: .leading, spacing: 16) {
             HStack {
-               Text("Reminder interval")
+               Text(NSLocalizedString("REMINDER_INTERVAL", comment: "Reminder interval setting"))
                Spacer()
 #if DEBUG
-               Stepper("\(Int(reminderInterval)) minutes", value: $reminderInterval, in: 1...180, step: 1)
+               Stepper(String(format: NSLocalizedString("MINUTES", comment: "Minutes format"), Int(reminderInterval)), value: $reminderInterval, in: 1...180, step: 1)
 #else
-               Stepper("\(Int(reminderInterval)) minutes", value: $reminderInterval, in: 15...180, step: 5)
+               Stepper(String(format: NSLocalizedString("MINUTES", comment: "Minutes format"), Int(reminderInterval)), value: $reminderInterval, in: 15...180, step: 5)
 #endif
             }
             
             HStack {
-               Text("Theme")
+               Text(NSLocalizedString("THEME", comment: "Theme setting"))
                Spacer()
                Picker("", selection: $theme) {
-                  Text("Light").tag("light")
-                  Text("Dark").tag("dark")
-                  Text("Auto").tag("auto")
+                  Text(NSLocalizedString("LIGHT", comment: "Light theme")).tag("light")
+                  Text(NSLocalizedString("DARK", comment: "Dark theme")).tag("dark")
+                  Text(NSLocalizedString("AUTO", comment: "Auto theme")).tag("auto")
                }
                .labelsHidden()
                .pickerStyle(.segmented)
             }
             
-            Toggle("Show countdown in menu bar", isOn: $showCountdown)
+            Toggle(NSLocalizedString("SHOW_COUNTDOWN", comment: "Show countdown setting"), isOn: $showCountdown)
          }
          .padding(.vertical, 10)
       }

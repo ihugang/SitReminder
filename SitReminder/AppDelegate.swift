@@ -13,6 +13,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
    var allDimWindows: [NSWindow] = [] // 用于变暗屏幕的窗口
    var settingsWindow: NSWindow? // 保持对设置窗口的强引用
    var statusItem: NSStatusItem?
+   
+   // 暂停相关属性
+   var isPaused: Bool = false // 是否处于暂停状态
+   var pauseEndTime: Date? // 暂停结束时间
+   var pauseTimer: Timer? // 暂停定时器
    var popover = NSPopover()
    var countdownTimer: Timer?
    var remainingSeconds: Int = 0
@@ -37,10 +42,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
    }
    
    func updateStatusBarTitle(remaining: Int) {
-      let minutes = remaining / 60
-      let seconds = remaining % 60
-      let timeString = String(format: "%02d:%02d", minutes, seconds)
-      
       if let button = statusItem?.button {
          let icon = NSImage(named: "icon")
          icon?.isTemplate = true
@@ -50,11 +51,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
          let iconStr = NSAttributedString(attachment: attachment)
          
          let title = NSMutableAttributedString(attributedString: iconStr)
-         if showCountdown {
+         
+         if isPaused {
+            // 如果处于暂停状态，显示暂停图标
+            title.append(NSAttributedString(string: " ⛔"))
+         } else if showCountdown {
+            // 如果未暂停且开启了倒计时显示
+            let minutes = remaining / 60
+            let seconds = remaining % 60
+            let timeString = String(format: "%02d:%02d", minutes, seconds)
             title.append(NSAttributedString(string: " \(timeString)"))
          }
-         button.attributedTitle = title
          
+         button.attributedTitle = title
          button.action = #selector(togglePopover(_:))
       }
    }
@@ -64,28 +73,51 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       let menu = NSMenu()
       
       // 添加当前状态信息
-      let statusMenuItem = NSMenuItem(title: "下一次提醒: \(formatTimeRemaining())", action: nil, keyEquivalent: "")
-      statusMenuItem.isEnabled = false
-      menu.addItem(statusMenuItem)
+      if isPaused, let endTime = pauseEndTime {
+         let formatter = DateFormatter()
+         formatter.dateFormat = "HH:mm"
+         let endTimeString = formatter.string(from: endTime)
+         
+         let statusMenuItem = NSMenuItem(title: String(format: NSLocalizedString("PAUSED_UNTIL", comment: "Paused until time"), endTimeString), action: nil, keyEquivalent: "")
+         statusMenuItem.isEnabled = false
+         menu.addItem(statusMenuItem)
+         
+         // 添加取消暂停选项
+         menu.addItem(NSMenuItem(title: NSLocalizedString("CANCEL_PAUSE", comment: "Cancel pause"), action: #selector(cancelPause), keyEquivalent: "c"))
+      } else {
+         let statusMenuItem = NSMenuItem(title: String(format: NSLocalizedString("NEXT_REMINDER", comment: "Next reminder time"), formatTimeRemaining()), action: nil, keyEquivalent: "")
+         statusMenuItem.isEnabled = false
+         menu.addItem(statusMenuItem)
+      }
       
       menu.addItem(NSMenuItem.separator())
       
       // 添加设置选项
-      menu.addItem(NSMenuItem(title: "设置...", action: #selector(showSettings), keyEquivalent: ","))
+      menu.addItem(NSMenuItem(title: NSLocalizedString("SETTINGS", comment: "Settings menu item"), action: #selector(showSettings), keyEquivalent: ","))
       
       // 添加立即提醒选项
-      menu.addItem(NSMenuItem(title: "立即提醒", action: #selector(showReminderNow), keyEquivalent: "r"))
+      menu.addItem(NSMenuItem(title: NSLocalizedString("REMIND_NOW", comment: "Remind now menu item"), action: #selector(showReminderNow), keyEquivalent: "r"))
       
       // 添加重置计时器选项
-      menu.addItem(NSMenuItem(title: "重置计时器", action: #selector(resetTimer), keyEquivalent: "t"))
+      menu.addItem(NSMenuItem(title: NSLocalizedString("RESET_TIMER", comment: "Reset timer menu item"), action: #selector(resetTimer), keyEquivalent: "t"))
+      
+      // 添加暂停菜单
+      let pauseMenu = NSMenu()
+      pauseMenu.addItem(NSMenuItem(title: NSLocalizedString("PAUSE_1_HOUR", comment: "Pause for 1 hour"), action: #selector(pauseForOneHour), keyEquivalent: "1"))
+      pauseMenu.addItem(NSMenuItem(title: NSLocalizedString("PAUSE_2_HOURS", comment: "Pause for 2 hours"), action: #selector(pauseForTwoHours), keyEquivalent: "2"))
+      pauseMenu.addItem(NSMenuItem(title: NSLocalizedString("PAUSE_UNTIL_TOMORROW", comment: "Pause until tomorrow"), action: #selector(pauseForToday), keyEquivalent: "t"))
+      
+      let pauseMenuItem = NSMenuItem(title: NSLocalizedString("PAUSE_MENU", comment: "Pause menu"), action: nil, keyEquivalent: "p")
+      pauseMenuItem.submenu = pauseMenu
+      menu.addItem(pauseMenuItem)
       
       menu.addItem(NSMenuItem.separator())
       
       // 添加关于选项
-      menu.addItem(NSMenuItem(title: "关于 SitReminder", action: #selector(showAboutWindow), keyEquivalent: ""))
+      menu.addItem(NSMenuItem(title: NSLocalizedString("ABOUT", comment: "About menu item"), action: #selector(showAboutWindow), keyEquivalent: "a"))
       
       // 添加退出选项
-      menu.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+      menu.addItem(NSMenuItem(title: NSLocalizedString("QUIT", comment: "Quit menu item"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
       
       // 显示菜单
       if let button = statusItem?.button {
@@ -151,11 +183,87 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       startCountdown(seconds: Int(reminderInterval * 60))
    }
    
+   // MARK: - 暂停相关方法
+   
+   // 暂停 1 小时
+   @objc func pauseForOneHour() {
+      pauseReminders(hours: 1)
+   }
+   
+   // 暂停 2 小时
+   @objc func pauseForTwoHours() {
+      pauseReminders(hours: 2)
+   }
+   
+   // 今日暂停
+   @objc func pauseForToday() {
+      // 计算到今天结束还有多少小时
+      let now = Date()
+      let calendar = Calendar.current
+      let endOfDay = calendar.startOfDay(for: now).addingTimeInterval(24 * 60 * 60)
+      let secondsUntilEndOfDay = endOfDay.timeIntervalSince(now)
+      let hoursUntilEndOfDay = secondsUntilEndOfDay / 3600
+      
+      pauseReminders(hours: hoursUntilEndOfDay)
+   }
+   
+   // 暂停提醒的通用方法
+   private func pauseReminders(hours: TimeInterval) {
+      // 取消当前的倒计时器
+      countdownTimer?.invalidate()
+      
+      // 设置暂停状态
+      isPaused = true
+      
+      // 计算暂停结束时间
+      pauseEndTime = Date().addingTimeInterval(hours * 60 * 60)
+      
+      // 更新状态栏图标
+      updateStatusBarTitle(remaining: remainingSeconds)
+      
+      // 创建暂停定时器
+      pauseTimer?.invalidate()
+      pauseTimer = Timer.scheduledTimer(withTimeInterval: hours * 60 * 60, repeats: false) { [weak self] _ in
+         self?.resumeReminders()
+      }
+      
+      print("AppDelegate: Reminders paused for \(Int(hours)) hours until \(pauseEndTime?.description ?? "unknown time")")
+   }
+   
+   // 恢复提醒
+   @objc func cancelPause() {
+      resumeReminders()
+   }
+   
+   // 恢复提醒的内部方法
+   private func resumeReminders() {
+      // 取消暂停定时器
+      pauseTimer?.invalidate()
+      pauseTimer = nil
+      
+      // 重置暂停状态
+      isPaused = false
+      pauseEndTime = nil
+      
+      // 重新启动倒计时
+      startCountdown(seconds: Int(reminderInterval * 60))
+      
+      print("AppDelegate: Reminders resumed")
+   }
+   
    func startCountdown(seconds: Int) {
       print("AppDelegate: Starting countdown for \(seconds) seconds.")
       remainingSeconds = seconds
       // Ensure previous timer is invalidated before creating a new one
       countdownTimer?.invalidate()
+      
+      // 如果处于暂停状态，不启动倒计时
+      if isPaused {
+         print("AppDelegate: Countdown paused until \(pauseEndTime?.description ?? "unknown time")")
+         updateStatusBarTitle(remaining: remainingSeconds)
+         return
+      }
+      
       countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
          if self.remainingSeconds > 0 {
             self.remainingSeconds -= 1
@@ -360,8 +468,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
    
    @objc func showAboutWindow() {
       let alert = NSAlert()
-      alert.messageText = "SitReminder v1.0"
-      alert.informativeText = "A tool for programmers to stay healthy.\n(c) 2025"
+      alert.messageText = NSLocalizedString("ABOUT_TITLE", comment: "About window title")
+      alert.informativeText = NSLocalizedString("ABOUT_TEXT", comment: "About window text")
       alert.runModal()
    }
    

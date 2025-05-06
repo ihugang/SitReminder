@@ -1,4 +1,4 @@
-# 🧘 SitReminder — A Healthy Reminder for Programmers / 给程序员的健康提醒工具
+# 🧘 SitReminder — A Healthy Reminder for Programmers 
 
 [English](#english-version) | [中文](#中文说明)
 
@@ -38,7 +38,7 @@ brew install --cask sitreminder
 ---
 
 ## 中文说明
-
+# 🧘 SitReminder — 给程序员的健康提醒工具
 **SitReminder** 是一款轻量级 macOS 菜单栏应用，专为程序员和久坐办公人群设计，定时提醒你起身活动，缓解久坐带来的心血管健康风险。
 
 ### ✨ 功能特点

@@ -1,0 +1,37 @@
+/* 
+  Localizable.strings
+  SitReminder
+  
+  Created for English localization
+*/
+
+// Menu Items
+"PAUSED_UNTIL" = "Paused until %@";
+"CANCEL_PAUSE" = "Cancel Pause";
+"NEXT_REMINDER" = "Next reminder: %@";
+"SETTINGS" = "Settings...";
+"REMIND_NOW" = "Remind Now";
+"RESET_TIMER" = "Reset Timer";
+"PAUSE_MENU" = "Pause";
+"PAUSE_1_HOUR" = "Pause 1 Hour";
+"PAUSE_2_HOURS" = "Pause 2 Hours";
+"PAUSE_UNTIL_TOMORROW" = "Pause Until Tomorrow";
+"ABOUT" = "About";
+"QUIT" = "Quit";
+
+// Settings View
+"REMINDER_INTERVAL" = "Reminder interval";
+"MINUTES" = "%d minutes";
+"THEME" = "Theme";
+"LIGHT" = "Light";
+"DARK" = "Dark";
+"AUTO" = "Auto";
+"SHOW_COUNTDOWN" = "Show countdown in menu bar";
+
+// Reminder View
+"TIME_TO_STAND_UP" = "⏰ Time to stand up!";
+"GOT_IT" = "Got it";
+
+// About Window
+"ABOUT_TITLE" = "SitReminder v1.0";
+"ABOUT_TEXT" = "A tool for programmers to stay healthy.\n(c) 2025";
