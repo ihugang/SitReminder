@@ -6,7 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		14334B6D2DCA11490070DF89 /* build_app.sh in Resources */ = {isa = PBXBuildFile; fileRef = 14334B6C2DCA11490070DF89 /* build_app.sh */; };
+		14334B6F2DCA11AA0070DF89 /* ExportOptions.plist in Resources */ = {isa = PBXBuildFile; fileRef = 14334B6E2DCA11AA0070DF89 /* ExportOptions.plist */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		14334B6C2DCA11490070DF89 /* build_app.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build_app.sh; sourceTree = "<group>"; };
+		14334B6E2DCA11AA0070DF89 /* ExportOptions.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = ExportOptions.plist; sourceTree = "<group>"; };
 		145151C02DC9BCC00098A6A3 /* SitReminder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SitReminder.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -47,6 +54,8 @@
 			children = (
 				145151C22DC9BCC00098A6A3 /* SitReminder */,
 				145151C12DC9BCC00098A6A3 /* Products */,
+				14334B6C2DCA11490070DF89 /* build_app.sh */,
+				14334B6E2DCA11AA0070DF89 /* ExportOptions.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -122,6 +131,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				14334B6D2DCA11490070DF89 /* build_app.sh in Resources */,
+				14334B6F2DCA11AA0070DF89 /* ExportOptions.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
