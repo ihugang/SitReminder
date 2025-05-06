@@ -23,17 +23,44 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
    var remainingSeconds: Int = 0
    @AppStorage("showCountdown") var showCountdown: Bool = true
    @AppStorage("reminderInterval") var reminderInterval: Double = 60
+   @AppStorage("appLanguage") var appLanguage: String = "auto"
    var isDismissing = false // 新增：防止重入的状态标志
    
    func applicationDidFinishLaunching(_ notification: Notification) {
       print("AppDelegate: applicationDidFinishLaunching - Setting up status bar.")
+      
+      // 应用用户选择的语言设置
+      applyLanguageSetting()
+      
       setupStatusBar()
       startCountdown(seconds: Int(reminderInterval * 60))
+      
+      // 监听提醒间隔变化
       NotificationCenter.default.addObserver(forName: Notification.Name("ReminderIntervalChanged"), object: nil, queue: .main) { _ in
          print("AppDelegate: Received ReminderIntervalChanged notification.")
          self.countdownTimer?.invalidate()
          self.startCountdown(seconds: Int(self.reminderInterval * 60))
       }
+      
+      // 监听语言变化
+      NotificationCenter.default.addObserver(forName: Notification.Name("LanguageChanged"), object: nil, queue: .main) { _ in
+         print("AppDelegate: Received LanguageChanged notification.")
+         self.applyLanguageSetting()
+      }
+   }
+   
+   // 应用语言设置
+   private func applyLanguageSetting() {
+      if appLanguage != "auto" {
+         // 设置应用程序的语言
+         UserDefaults.standard.set([appLanguage], forKey: "AppleLanguages")
+         print("AppDelegate: Applied language setting: \(appLanguage)")
+      } else {
+         // 使用系统语言
+         UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+         print("AppDelegate: Using system language")
+      }
+      UserDefaults.standard.synchronize()
    }
    
    func setupStatusBar() {

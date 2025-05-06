@@ -27,6 +27,12 @@
 "DARK" = "深色";
 "AUTO" = "自动";
 "SHOW_COUNTDOWN" = "在菜单栏显示倒计时";
+"LANGUAGE" = "语言";
+"LANGUAGE_AUTO" = "系统";
+"LANGUAGE_ZH_HANS" = "简体中文";
+"LANGUAGE_EN" = "English";
+"LANGUAGE_CHANGED_TITLE" = "语言已更改";
+"LANGUAGE_CHANGED_MESSAGE" = "语言设置已更改。请重启应用程序以使更改生效。";
 
 // Reminder View
 "TIME_TO_STAND_UP" = "⏰ 该起身活动了！";

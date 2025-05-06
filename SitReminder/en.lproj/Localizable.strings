@@ -27,6 +27,12 @@
 "DARK" = "Dark";
 "AUTO" = "Auto";
 "SHOW_COUNTDOWN" = "Show countdown in menu bar";
+"LANGUAGE" = "Language";
+"LANGUAGE_AUTO" = "System";
+"LANGUAGE_ZH_HANS" = "简体中文";
+"LANGUAGE_EN" = "English";
+"LANGUAGE_CHANGED_TITLE" = "Language Changed";
+"LANGUAGE_CHANGED_MESSAGE" = "The language setting has been changed. Please restart the application for the changes to take effect.";
 
 // Reminder View
 "TIME_TO_STAND_UP" = "⏰ Time to stand up!";

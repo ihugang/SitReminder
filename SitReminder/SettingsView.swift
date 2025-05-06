@@ -13,6 +13,7 @@ struct SettingsView: View {
    @AppStorage("reminderInterval") var reminderInterval: Double = 60
    @AppStorage("theme") var theme: String = "auto"
    @AppStorage("showCountdown") var showCountdown: Bool = true
+   @AppStorage("appLanguage") var appLanguage: String = "auto"
    
    var body: some View {
       Form {
@@ -40,6 +41,18 @@ struct SettingsView: View {
             }
             
             Toggle(NSLocalizedString("SHOW_COUNTDOWN", comment: "Show countdown setting"), isOn: $showCountdown)
+            
+            HStack {
+               Text(NSLocalizedString("LANGUAGE", comment: "Language setting"))
+               Spacer()
+               Picker("", selection: $appLanguage) {
+                  Text(NSLocalizedString("LANGUAGE_AUTO", comment: "System language")).tag("auto")
+                  Text(NSLocalizedString("LANGUAGE_ZH_HANS", comment: "Simplified Chinese")).tag("zh-Hans")
+                  Text(NSLocalizedString("LANGUAGE_EN", comment: "English")).tag("en")
+               }
+               .labelsHidden()
+               .frame(width: 150)
+            }
          }
          .padding(.vertical, 10)
       }
@@ -47,6 +60,14 @@ struct SettingsView: View {
       .frame(width: 300)
       .onChange(of: reminderInterval) { newValue in
          NotificationCenter.default.post(name: Notification.Name("ReminderIntervalChanged"), object: nil)
+      }
+      .onChange(of: appLanguage) { newValue in
+         NotificationCenter.default.post(name: Notification.Name("LanguageChanged"), object: nil)
+         // 显示需要重启应用的提示
+         let alert = NSAlert()
+         alert.messageText = NSLocalizedString("LANGUAGE_CHANGED_TITLE", comment: "Language changed title")
+         alert.informativeText = NSLocalizedString("LANGUAGE_CHANGED_MESSAGE", comment: "Language changed message")
+         alert.runModal()
       }
    }
 }
