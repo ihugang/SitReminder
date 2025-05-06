@@ -101,6 +101,7 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1630;
 				LastUpgradeCheck = 1630;
+				ORGANIZATIONNAME = codans;
 				TargetAttributes = {
 					145151BF2DC9BCC00098A6A3 = {
 						CreatedOnToolsVersion = 16.3;
