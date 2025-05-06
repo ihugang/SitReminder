@@ -9,7 +9,8 @@ import SwiftUI
 import AppKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-   var allReminderWindows: [NSWindow] = []
+   var allReminderWindows: [NSWindow] = [] // 主提醒窗口
+   var allDimWindows: [NSWindow] = [] // 用于变暗屏幕的窗口
    var statusItem: NSStatusItem?
    var popover = NSPopover()
    var countdownTimer: Timer?
@@ -89,9 +90,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
    func showReminderWindow() {
       print("AppDelegate: showReminderWindow called.")
       
-      // 检查是否有可重用的窗口
+      // 第一步：创建或重用变暗窗口，覆盖所有屏幕
+      createOrReuseAllDimWindows()
+      
+      // 第二步：创建或重用主提醒窗口
       if !allReminderWindows.isEmpty {
-         print("AppDelegate: Reusing existing window. Window count: \(allReminderWindows.count)")
+         print("AppDelegate: Reusing existing reminder window.")
          
          // 获取第一个窗口进行重用
          let windowToReuse = allReminderWindows[0]
@@ -104,10 +108,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
          // 使窗口可见并激活
          windowToReuse.makeFirstResponder(hostingView)
          windowToReuse.makeKeyAndOrderFront(nil)
-         print("AppDelegate: Existing window made visible.")
+         print("AppDelegate: Existing reminder window made visible.")
       } else {
          // 如果没有窗口，创建一个新窗口
-         print("AppDelegate: No existing windows found. Creating new window.")
+         print("AppDelegate: No existing reminder window found. Creating new one.")
          
          if let mainScreen = NSScreen.main {
             let windowWidth: CGFloat = 400
@@ -121,14 +125,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                                           styleMask: [.titled, .closable],
                                           backing: .buffered, defer: false)
             reminderWindow.isOpaque = false
-            reminderWindow.backgroundColor = NSColor.black.withAlphaComponent(0.4)
+            reminderWindow.backgroundColor = NSColor.clear // 使用透明背景，因为我们有变暗窗口
             print("AppDelegate: Creating main reminder window.")
             
             // 设置窗口内容
             let reminderView = ReminderOverlayView(appDelegateInstance: self)
             let hostingView = EscapableHostingView(rootView: reminderView, appDelegate: self)
             reminderWindow.contentView = hostingView
-            reminderWindow.level = .floating
+            reminderWindow.level = .floating + 1 // 确保在变暗窗口之上
             
             // 设置第一响应者以捕获键盘事件
             reminderWindow.makeFirstResponder(hostingView)
@@ -136,11 +140,100 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             // 添加到窗口数组中以便将来重用
             allReminderWindows.append(reminderWindow)
-            print("AppDelegate: Main reminder window added. Window count: \(allReminderWindows.count)")
+            print("AppDelegate: Main reminder window added.")
          }
       }
       
-      print("AppDelegate: Reminder window now visible.")
+      print("AppDelegate: All windows now visible.")
+   }
+   
+   // 创建一个自定义视图来处理 Esc 键事件
+   class DimWindowView: NSView {
+      weak var appDelegate: AppDelegate?
+      
+      init(frame: NSRect, appDelegate: AppDelegate) {
+         self.appDelegate = appDelegate
+         super.init(frame: frame)
+      }
+      
+      required init?(coder: NSCoder) {
+         fatalError("init(coder:) has not been implemented")
+      }
+      
+      override var acceptsFirstResponder: Bool {
+         return true
+      }
+      
+      override func keyDown(with event: NSEvent) {
+         if event.keyCode == 53 { // Esc 键码
+            print("DimWindowView: Esc key detected.")
+            if let delegate = appDelegate {
+               print("DimWindowView: Calling delegate.dismissAllReminderWindows()")
+               delegate.dismissAllReminderWindows()
+            }
+         } else {
+            super.keyDown(with: event)
+         }
+      }
+   }
+   
+   // 创建或重用变暗窗口，覆盖所有屏幕
+   private func createOrReuseAllDimWindows() {
+      // 检查是否需要创建新的变暗窗口
+      if allDimWindows.count < NSScreen.screens.count {
+         print("AppDelegate: Creating new dim windows for \(NSScreen.screens.count - allDimWindows.count) screens.")
+         
+         // 为每个屏幕创建变暗窗口
+         for (index, screen) in NSScreen.screens.enumerated() {
+            // 如果这个索引位置已经有窗口，跳过
+            if index < allDimWindows.count {
+               continue
+            }
+            
+            // 创建覆盖整个屏幕的变暗窗口
+            let dimWindow = NSWindow(contentRect: screen.frame,
+                                    styleMask: .borderless,
+                                    backing: .buffered,
+                                    defer: false)
+            dimWindow.backgroundColor = NSColor.black.withAlphaComponent(0.5) // 半透明黑色
+            dimWindow.level = .floating // 浮动层级，但低于提醒窗口
+            dimWindow.ignoresMouseEvents = false // 允许接收鼠标事件以便处理 Esc 键
+            dimWindow.isOpaque = false
+            dimWindow.hasShadow = false
+            dimWindow.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary] // 在所有工作区显示
+            
+            // 设置自定义视图以处理 Esc 键
+            let dimView = DimWindowView(frame: screen.frame, appDelegate: self)
+            dimWindow.contentView = dimView
+            dimWindow.makeFirstResponder(dimView)
+            
+            // 添加到变暗窗口数组
+            allDimWindows.append(dimWindow)
+            print("AppDelegate: Created dim window for screen \(index + 1).")
+         }
+      } else {
+         // 如果已有窗口，更新它们的内容视图
+         for (index, window) in allDimWindows.enumerated() {
+            if index < NSScreen.screens.count {
+               let screen = NSScreen.screens[index]
+               // 更新窗口位置以适应可能的屏幕变化
+               window.setFrame(screen.frame, display: true)
+               
+               // 确保窗口有正确的内容视图
+               if !(window.contentView is DimWindowView) {
+                  let dimView = DimWindowView(frame: screen.frame, appDelegate: self)
+                  window.contentView = dimView
+                  window.makeFirstResponder(dimView)
+               }
+            }
+         }
+      }
+      
+      // 显示所有变暗窗口
+      for window in allDimWindows {
+         window.orderFront(nil)
+      }
+      print("AppDelegate: All dim windows are now visible.")
    }
    
    @objc func dismissAllReminderWindows() {
@@ -152,15 +245,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       isDismissing = true
       print("AppDelegate: isDismissing set to true")
  
-      // Hide windows instead of closing them
-      print("AppDelegate: Hiding \(allReminderWindows.count) windows instead of closing.")
+      // 隐藏所有提醒窗口
+      print("AppDelegate: Hiding \(allReminderWindows.count) reminder windows.")
       for window in allReminderWindows {
-         print("AppDelegate: Hiding window: \(window)")
-         window.orderOut(nil) // Hide window instead of closing it
+         print("AppDelegate: Hiding reminder window: \(window)")
+         window.orderOut(nil) // 隐藏而不是关闭
+      }
+      
+      // 隐藏所有变暗窗口
+      print("AppDelegate: Hiding \(allDimWindows.count) dim windows.")
+      for window in allDimWindows {
+         print("AppDelegate: Hiding dim window: \(window)")
+         window.orderOut(nil) // 隐藏而不是关闭
       }
  
-      // We no longer clear the array - windows are kept for reuse
-      print("AppDelegate: Windows hidden. Keeping them for reuse.")
+      // 保留窗口数组以便重用
+      print("AppDelegate: All windows hidden. Keeping them for reuse.")
  
       // Reset the flag SYNCHRONOUSLY
       isDismissing = false
