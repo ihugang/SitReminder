@@ -8,9 +8,10 @@
 import SwiftUI
 import AppKit
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
    var allReminderWindows: [NSWindow] = [] // 主提醒窗口
    var allDimWindows: [NSWindow] = [] // 用于变暗屏幕的窗口
+   var settingsWindow: NSWindow? // 保持对设置窗口的强引用
    var statusItem: NSStatusItem?
    var popover = NSPopover()
    var countdownTimer: Timer?
@@ -58,15 +59,96 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       }
    }
    
+   // 创建并显示状态栏菜单
    @objc func togglePopover(_ sender: AnyObject?) {
-      if popover.isShown {
-         popover.performClose(sender)
-      } else {
-         popover.contentViewController = NSHostingController(rootView: ReminderPopupView())
-         if let button = statusItem?.button {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-         }
+      let menu = NSMenu()
+      
+      // 添加当前状态信息
+      let statusMenuItem = NSMenuItem(title: "下一次提醒: \(formatTimeRemaining())", action: nil, keyEquivalent: "")
+      statusMenuItem.isEnabled = false
+      menu.addItem(statusMenuItem)
+      
+      menu.addItem(NSMenuItem.separator())
+      
+      // 添加设置选项
+      menu.addItem(NSMenuItem(title: "设置...", action: #selector(showSettings), keyEquivalent: ","))
+      
+      // 添加立即提醒选项
+      menu.addItem(NSMenuItem(title: "立即提醒", action: #selector(showReminderNow), keyEquivalent: "r"))
+      
+      // 添加重置计时器选项
+      menu.addItem(NSMenuItem(title: "重置计时器", action: #selector(resetTimer), keyEquivalent: "t"))
+      
+      menu.addItem(NSMenuItem.separator())
+      
+      // 添加关于选项
+      menu.addItem(NSMenuItem(title: "关于 SitReminder", action: #selector(showAboutWindow), keyEquivalent: ""))
+      
+      // 添加退出选项
+      menu.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+      
+      // 显示菜单
+      if let button = statusItem?.button {
+         let point = NSPoint(x: button.bounds.midX, y: button.bounds.midY)
+         menu.popUp(positioning: nil, at: point, in: button)
       }
+   }
+   
+   // 格式化剩余时间
+   private func formatTimeRemaining() -> String {
+      let minutes = remainingSeconds / 60
+      let seconds = remainingSeconds % 60
+      return String(format: "%02d:%02d", minutes, seconds)
+   }
+   
+   // 显示设置窗口
+   @objc func showSettings() {
+      // 如果设置窗口已经存在，就重用它
+      if let existingWindow = settingsWindow {
+         existingWindow.makeKeyAndOrderFront(nil)
+         NSApp.activate(ignoringOtherApps: true)
+         return
+      }
+      
+      // 创建新的设置窗口
+      let newSettingsWindow = NSWindow(
+         contentRect: NSRect(x: 0, y: 0, width: 350, height: 250),
+         styleMask: [.titled, .closable],
+         backing: .buffered,
+         defer: false)
+      
+      newSettingsWindow.title = "SitReminder 设置"
+      newSettingsWindow.center()
+      
+      // 创建 SwiftUI 视图
+      let settingsView = SettingsView()
+      let hostingView = NSHostingView(rootView: settingsView)
+      newSettingsWindow.contentView = hostingView
+      
+      // 设置窗口关闭时的回调
+      newSettingsWindow.isReleasedWhenClosed = false // 防止窗口关闭时被释放
+      newSettingsWindow.delegate = self // 设置委托以处理窗口关闭事件
+      
+      // 保存对窗口的引用
+      self.settingsWindow = newSettingsWindow
+      
+      // 显示窗口
+      newSettingsWindow.makeKeyAndOrderFront(nil)
+      NSApp.activate(ignoringOtherApps: true)
+   }
+   
+   // 立即显示提醒
+   @objc func showReminderNow() {
+      countdownTimer?.invalidate()
+      remainingSeconds = 0
+      updateStatusBarTitle(remaining: 0)
+      showReminderWindow()
+   }
+   
+   // 重置计时器
+   @objc func resetTimer() {
+      countdownTimer?.invalidate()
+      startCountdown(seconds: Int(reminderInterval * 60))
    }
    
    func startCountdown(seconds: Int) {
@@ -276,10 +358,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       }
    }
    
-   func showAboutWindow() {
+   @objc func showAboutWindow() {
       let alert = NSAlert()
       alert.messageText = "SitReminder v1.0"
       alert.informativeText = "A tool for programmers to stay healthy.\n(c) 2025"
       alert.runModal()
+   }
+   
+   // MARK: - NSWindowDelegate
+   
+   // 处理窗口关闭事件
+   func windowWillClose(_ notification: Notification) {
+      if let closedWindow = notification.object as? NSWindow {
+         // 检查是否是设置窗口
+         if closedWindow == settingsWindow {
+            print("设置窗口即将关闭")
+            // 我们不立即释放窗口，只是将其隐藏
+            // 下次打开时会重用这个窗口
+         }
+      }
    }
 }
