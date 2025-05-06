@@ -2,6 +2,10 @@
 
 [English](#english-version) | [中文](#中文说明)
 
+![platform](https://img.shields.io/badge/platform-macOS-blue)
+![language](https://img.shields.io/badge/language-Swift-orange)
+![license](https://img.shields.io/github/license/ihugang/SitReminder)
+
 ---
 
 ## English Version
